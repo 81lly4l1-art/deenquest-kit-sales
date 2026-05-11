@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeenQuest: Safe Place Prototype</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+        }
+
+        .container {
+            height: 100vh;
+            width: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        section {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+
+        /* Tree Section */
+        #tree-section {
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+        }
+
+        .tree-container {
+            width: 350px;
+            height: 350px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            touch-action: manipulation;
+        }
+
+        .tree-svg {
+            width: 100%;
+            height: 100%;
+            animation: breathe 4s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(45, 90, 39, 0.5));
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .tree-svg.pulse {
+            animation: pulse-anim 0.3s ease-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes pulse-anim {
+            0% { transform: scale(1.05); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* Pool Section */
+        #pool-section {
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d);
+            overflow: hidden;
+        }
+
+        .pool-surface {
+            width: 100%;
+            height: 50%;
+            position: absolute;
+            bottom: 0;
+            background: rgba(26, 42, 108, 0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .shimmer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.05) 25%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0.05) 75%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            background-size: 200% 200%;
+            animation: shimmer-anim 8s linear infinite;
+        }
+
+        @keyframes shimmer-anim {
+            0% { background-position: -200% -200%; }
+            100% { background-position: 200% 200%; }
+        }
+
+        .counter {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            color: #fff;
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-shadow: 0 0 15px rgba(255,255,255,0.3);
+        }
+
+        .label {
+            color: rgba(255,255,255,0.7);
+            margin-top: 30px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .audio-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 100;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            width: 180px;
+            margin: 2px 0;
+        }
+
+        .volume-bar {
+            width: 60px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            margin-top: 6px;
+            position: relative;
+        }
+
+        .volume-fill {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="audio-status">
+        <div class="status-item">
+            <span>Forest Ambience</span>
+            <div class="volume-bar"><div id="forest-vol" class="volume-fill"></div></div>
+        </div>
+        <div class="status-item">
+            <span>Recitation</span>
+            <div class="volume-bar"><div id="recitation-vol" class="volume-fill"></div></div>
+        </div>
+    </div>
+
+    <div class="container" id="main-container">
+        <section id="tree-section">
+            <div class="counter" id="main-counter">0/99</div>
+            <div class="tree-container" id="tree-trigger">
+                <svg viewBox="0 0 200 200" class="tree-svg" id="tree-svg">
+                    <g id="tree-trunk">
+                        <path d="M100,180 Q100,140 100,100" stroke="#4d2911" stroke-width="14" fill="none" stroke-linecap="round" />
+                        <path d="M100,150 Q80,130 70,110" stroke="#4d2911" stroke-width="8" fill="none" stroke-linecap="round" />
+                        <path d="M100,140 Q120,120 130,105" stroke="#4d2911" stroke-width="8" fill="none" stroke-linecap="round" />
+                    </g>
+                    <g id="tree-foliage">
+                        <circle cx="100" cy="75" r="45" fill="#2d5a27" opacity="0.9" />
+                        <circle cx="75" cy="65" r="35" fill="#3a7a33" opacity="0.8" />
+                        <circle cx="125" cy="70" r="40" fill="#1e4d1a" opacity="0.85" />
+                        <circle cx="100" cy="45" r="30" fill="#458a3d" opacity="0.9" />
+                        <circle cx="115" cy="55" r="25" fill="#52a449" opacity="0.8" />
+                    </g>
+                </svg>
+            </div>
+            <div class="label">The Ancient Tree</div>
+        </section>
+
+        <section id="pool-section">
+            <h2 style="color: white; font-weight: 300; letter-spacing: 4px; z-index: 1;">REFLECTION POOL</h2>
+            <div class="pool-surface">
+                <div class="shimmer"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Rhythm Guard Logic
+        let count = 0;
+        let tapTimes = [];
+        const treeTrigger = document.getElementById('tree-trigger');
+        const treeSvg = document.getElementById('tree-svg');
+        const counterDisplay = document.getElementById('main-counter');
+
+        treeTrigger.addEventListener('mousedown', (e) => {
+            // Prevent accidental swipe/scroll
+            e.stopPropagation();
+            handleTap();
+        });
+
+        treeTrigger.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Critical: stops touch from triggering scroll
+            e.stopPropagation();
+            handleTap();
+        }, { passive: false });
+
+        function handleTap() {
+            const now = Date.now();
+            tapTimes.push(now);
+
+            if (tapTimes.length > 3) {
+                tapTimes.shift();
+            }
+
+            if (tapTimes.length === 3) {
+                const diff1 = (tapTimes[1] - tapTimes[0]) / 1000;
+                const diff2 = (tapTimes[2] - tapTimes[1]) / 1000;
+
+                // Ar-Rah-Man rhythm: 0.3s to 0.6s apart
+                if (diff1 >= 0.3 && diff1 <= 0.6 && diff2 >= 0.3 && diff2 <= 0.6) {
+                    successPulse();
+                    tapTimes = []; // Reset after success
+                }
+            }
+        }
+
+        function successPulse() {
+            count++;
+            counterDisplay.innerText = `${count}/99`;
+
+            treeSvg.classList.remove('pulse');
+            void treeSvg.offsetWidth; // Trigger reflow
+            treeSvg.classList.add('pulse');
+
+            // Audio Feedback (Placeholder)
+            console.log("Success Rhythm! Count: " + count);
+        }
+
+        // Web Audio API & Cross-fade Logic
+        let audioCtx;
+        let forestGain, recitationGain;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if (isAudioInit) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            forestGain = audioCtx.createGain();
+            recitationGain = audioCtx.createGain();
+
+            forestGain.gain.value = 1.0;
+            recitationGain.gain.value = 0.0;
+
+            // Connect to destination (in a real app, we'd connect sources here)
+            forestGain.connect(audioCtx.destination);
+            recitationGain.connect(audioCtx.destination);
+
+            isAudioInit = true;
+            updateVolumeVisuals();
+        }
+
+        function updateVolumeVisuals() {
+            if (!isAudioInit) return;
+            document.getElementById('forest-vol').style.width = (forestGain.gain.value * 100) + '%';
+            document.getElementById('recitation-vol').style.width = (recitationGain.gain.value * 100) + '%';
+        }
+
+        // Cross-fade based on scroll
+        const container = document.getElementById('main-container');
+        container.addEventListener('scroll', () => {
+            if (!isAudioInit) initAudio();
+
+            const scrollPos = container.scrollTop;
+            const height = window.innerHeight;
+            const ratio = Math.min(Math.max(scrollPos / height, 0), 1);
+
+            // Forest fades from 100% to 5%
+            const forestVal = 1.0 - (ratio * 0.95);
+            // Recitation fades from 0% to 100%
+            const recitationVal = ratio;
+
+            if (forestGain) forestGain.gain.setTargetAtTime(forestVal, audioCtx.currentTime, 0.1);
+            if (recitationGain) recitationGain.gain.setTargetAtTime(recitationVal, audioCtx.currentTime, 0.1);
+
+            updateVolumeVisuals();
+        });
+
+        // Initialize audio on first interaction
+        window.addEventListener('click', initAudio, { once: true });
+        window.addEventListener('touchstart', initAudio, { once: true });
+
+    </script>
+</body>
+</html>
